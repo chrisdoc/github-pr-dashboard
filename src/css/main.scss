@@ -83,8 +83,9 @@ footer {
   }
 
   &.pull-request--unmergeable {
-    background: #D24D57;
+    // background: #D24D57;
     border-left: 36px solid #A20D17;
+    background: linear-gradient(to right, orange , yellow, green, cyan, blue, violet);
 
     &:before {
       color: #FFFFFF;

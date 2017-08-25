@@ -60,15 +60,15 @@ export default class PullRequest extends React.Component {
               reactions={pr.reactions}
             />
           </div>
-          <div className="pull-request-created" title={this.formatTime('Created', pr.created)}>
-            Opened by {pr.user.username} {this.formatRelativeTime(pr.created)}
+          <div className="pull-request-created" title={this.formatTime('Last updated', pr.updated)}>
+            Opened by {pr.user.username} {this.formatRelativeTime(pr.updated)}
           </div>
         </div>
         <div
           className="pull-request-last-updated"
-          title={this.formatTime('Last updated', pr.updated)}
+          title={this.formatTime('Last updated', pr.created)}
         >
-          {this.formatRelativeTime(pr.updated)}
+          {this.formatRelativeTime(pr.created)}
         </div>
       </div>
     );
