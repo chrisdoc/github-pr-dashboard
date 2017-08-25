@@ -30,7 +30,7 @@ export function reposReducer(state = [], action) {
   }
 }
 
-function sortPullRequests(pullRequests, sortByRepo, orderBy = 'updated') {
+function sortPullRequests(pullRequests, sortByRepo, orderBy = 'created') {
   return [...pullRequests].sort((a, b) => {
     if (sortByRepo) {
       if (a.repoUrl < b.repoUrl) {
@@ -41,10 +41,10 @@ function sortPullRequests(pullRequests, sortByRepo, orderBy = 'updated') {
       }
     }
 
-    if (a[orderBy] < b[orderBy]) {
+    if (a[orderBy] > b[orderBy]) {
       return 1;
     }
-    if (a[orderBy] > b[orderBy]) {
+    if (a[orderBy] < b[orderBy]) {
       return -1;
     }
 
@@ -95,7 +95,7 @@ export function errorReducer(state = '', action) {
   }
 }
 
-export function sortOptionsReducer(state = { sortByRepo: false, orderBy: 'updated' }, action) {
+export function sortOptionsReducer(state = { sortByRepo: false, orderBy: 'created' }, action) {
   switch (action.type) {
     case ActionTypes.SORT:
       return action.sortOptions;

@@ -1,5 +1,5 @@
 const axios = require('axios');
-
+const moment = require('moment');
 const configManager = require('./configManager');
 const emoji = require('./emoji');
 
@@ -112,7 +112,7 @@ exports.loadPullRequests = function loadPullRequests() {
   .then(prs => {
     const statusPromises = prs.map(pr => getPullRequestStatus(pr));
     return Promise.all(statusPromises).then(() => {
-      prs.sort((p1, p2) => new Date(p2.updated).getTime() - new Date(p1.updated).getTime());
+      prs.sort((p2, p1) => new Date(p2.updated).getTime() - new Date(p1.updated).getTime());
       if (configManager.hasMergeRules()) {
         prs.forEach(pr => {
           if (config.mergeRule.neverRegexp && configManager.getNeverMergeRegexp().test(pr.title)) {
@@ -120,6 +120,8 @@ exports.loadPullRequests = function loadPullRequests() {
           } else if (pr.positiveComments >= config.mergeRule.positive &&
               pr.negativeComments <= config.mergeRule.negative) {
             pr.mergeable = true;
+          } else if(moment(pr.created).isBefore(moment().subtract(7, "days"))) {
+            pr.unmergeable = true;
           }
         });
       }

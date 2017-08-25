@@ -34,8 +34,8 @@ class SortControl extends React.Component {
           <label htmlFor="order-by"><strong>Order by</strong></label>
           &nbsp;
           <select id="order-by" ref="orderBySelect" onChange={this.changeSortOptions}>
-            <option value="updated">last updated</option>
             <option value="created">created</option>
+            <option value="updated">last updated</option>
           </select>
         </span>
       </div>
