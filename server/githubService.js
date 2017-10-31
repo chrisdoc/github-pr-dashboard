@@ -120,6 +120,7 @@ exports.loadPullRequests = function loadPullRequests() {
     const reviewsPromises = prs.map(pr => getPullRequestReviews(pr));
     return Promise.all(reviewsPromises).then(() => prs);
   })
+  .then(prs => prs.filter(pr => pr.positiveReviews > 0 && pr.negativeReviews === 0))
   .then(prs => {
     const commentsPromises = prs.map(pr => getPullRequestComments(pr));
     return Promise.all(commentsPromises).then(() => prs);
