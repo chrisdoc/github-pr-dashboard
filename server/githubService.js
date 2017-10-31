@@ -13,10 +13,10 @@ function apiCall(url, headers = {}) {
     }
   } else if (config.token ) {
     options.auth = {
-      username: config.token 
+      username: config.token
     }
   };
-  
+
   return axios.get(url, options);
 }
 
@@ -80,6 +80,20 @@ function getPullRequestReactions(pr) {
   });
 }
 
+function getPullRequestReviews(pr) {
+  const config = configManager.getConfig();
+  return apiCall(`${config.apiBaseUrl}/repos/${pr.repo}/pulls/${pr.number}/reviews`, {
+    Accept: 'application/vnd.github.squirrel-girl-preview'
+  }).then(reviews => {
+    pr.positiveReviews = reviews.data.reduce((total, review) => {
+      return total + (review.state === 'APPROVED' ? 1 : 0)
+    }, 0)
+    pr.negativeReviews = reviews.data.reduce((total, review) => {
+      return total + (review.state === 'CHANGES_REQUESTED' ? 1 : 0)
+    }, 0)
+  });
+}
+
 function getPullRequestStatus(pr) {
   return apiCall(pr.statuses_url).then(statuses => {
     if (statuses.data.length) {
@@ -101,7 +115,13 @@ exports.loadPullRequests = function loadPullRequests() {
   const config = configManager.getConfig();
   const repos = config.repos;
 
-  return getPullRequests(repos).then(prs => {
+  return getPullRequests(repos)
+  .then(prs => {
+    const reviewsPromises = prs.map(pr => getPullRequestReviews(pr));
+    return Promise.all(reviewsPromises).then(() => prs);
+  })
+  .then(prs => prs.filter(pr => pr.positiveReviews === 0 || pr.negativeReviews > 0))
+  .then(prs => {
     const commentsPromises = prs.map(pr => getPullRequestComments(pr));
     return Promise.all(commentsPromises).then(() => prs);
   })
@@ -111,21 +131,22 @@ exports.loadPullRequests = function loadPullRequests() {
   })
   .then(prs => {
     const statusPromises = prs.map(pr => getPullRequestStatus(pr));
-    return Promise.all(statusPromises).then(() => {
-      prs.sort((p2, p1) => new Date(p2.updated).getTime() - new Date(p1.updated).getTime());
-      if (configManager.hasMergeRules()) {
-        prs.forEach(pr => {
-          if (config.mergeRule.neverRegexp && configManager.getNeverMergeRegexp().test(pr.title)) {
-            pr.unmergeable = true;
-          } else if (pr.positiveComments >= config.mergeRule.positive &&
-              pr.negativeComments <= config.mergeRule.negative) {
-            pr.mergeable = true;
-          } else if(moment(pr.created).isBefore(moment().subtract(7, "days"))) {
-            pr.unmergeable = true;
-          }
-        });
-      }
-      return prs;
-    });
+    return Promise.all(statusPromises).then(() => prs);
+  })
+  .then(prs => {
+    prs.sort((p2, p1) => new Date(p2.updated).getTime() - new Date(p1.updated).getTime());
+    if (configManager.hasMergeRules()) {
+      prs.forEach(pr => {
+        if (config.mergeRule.neverRegexp && configManager.getNeverMergeRegexp().test(pr.title)) {
+          pr.unmergeable = true;
+        } else if (pr.positiveComments >= config.mergeRule.positive &&
+            pr.negativeComments <= config.mergeRule.negative) {
+          pr.mergeable = true;
+        } else if(moment(pr.created).isBefore(moment().subtract(7, "days"))) {
+          pr.unmergeable = true;
+        }
+      });
+    }
+    return prs;
   });
 };
