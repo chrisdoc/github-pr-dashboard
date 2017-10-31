@@ -80,6 +80,20 @@ function getPullRequestReactions(pr) {
   });
 }
 
+function getPullRequestReviews(pr) {
+  const config = configManager.getConfig();
+  return apiCall(`${config.apiBaseUrl}/repos/${pr.repo}/pulls/${pr.number}/reviews`, {
+    Accept: 'application/vnd.github.squirrel-girl-preview'
+  }).then(reviews => {
+    pr.positiveReviews = reviews.data.reduce((total, review) => {
+      return total + (review.state === 'APPROVED' ? 1 : 0)
+    }, 0)
+    pr.negativeReviews = reviews.data.reduce((total, review) => {
+      return total + (review.state === 'REQUEST_CHANGES' ? 1 : 0)
+    }, 0)
+  });
+}
+
 function getPullRequestStatus(pr) {
   return apiCall(pr.statuses_url).then(statuses => {
     if (statuses.data.length) {
@@ -102,6 +116,10 @@ exports.loadPullRequests = function loadPullRequests() {
   const repos = config.repos;
 
   return getPullRequests(repos)
+  .then(prs => {
+    const reviewsPromises = prs.map(pr => getPullRequestReviews(pr));
+    return Promise.all(reviewsPromises).then(() => prs);
+  })
   .then(prs => {
     const commentsPromises = prs.map(pr => getPullRequestComments(pr));
     return Promise.all(commentsPromises).then(() => prs);
