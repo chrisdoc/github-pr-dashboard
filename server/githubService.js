@@ -101,7 +101,8 @@ exports.loadPullRequests = function loadPullRequests() {
   const config = configManager.getConfig();
   const repos = config.repos;
 
-  return getPullRequests(repos).then(prs => {
+  return getPullRequests(repos)
+  .then(prs => {
     const commentsPromises = prs.map(pr => getPullRequestComments(pr));
     return Promise.all(commentsPromises).then(() => prs);
   })
@@ -111,7 +112,8 @@ exports.loadPullRequests = function loadPullRequests() {
   })
   .then(prs => {
     const statusPromises = prs.map(pr => getPullRequestStatus(pr));
-    return Promise.all(statusPromises).then(() => {
+    return Promise.all(statusPromises).then(() => prs);
+  }).then(prs => {
       prs.sort((p2, p1) => new Date(p2.updated).getTime() - new Date(p1.updated).getTime());
       if (configManager.hasMergeRules()) {
         prs.forEach(pr => {
